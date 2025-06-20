@@ -8,6 +8,7 @@ using MEC;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BubbleChat.Utils;
 
 namespace BubbleChat.Commands
 {
@@ -48,6 +49,21 @@ namespace BubbleChat.Commands
             {
                 response = $"Message too long! ({msg.Length}/{maxLen})";
                 return false;
+            }
+            PlayerBubbleManager.Instance.RefreshBlacklistFromConfig();
+            // Blacklist check
+            foreach (var category in PlayerBubbleManager.AllBlacklistedWords)
+            {
+                foreach (var word in category.Value)
+                {
+                    if (msg.IndexOf(word, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        // Fire-and-forget async webhook call
+                        _ = DiscordWebhookUtils.SendToWebhookAsync(player, msg, word, category.Key, BubbleChatPlugin.Instance.Config.DiscordWebhookUrl);
+                        response = "Your message contains a blacklisted word and was not sent.";
+                        return false;
+                    }
+                }
             }
             PlayerBubbleManager.Instance.ShowTextBubble(player, msg, config?.BubbleDuration ?? 5f);
             response = $"Bubble sent: '{msg}'";

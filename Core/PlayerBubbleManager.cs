@@ -6,6 +6,7 @@ using UnityEngine;
 using AdminToys;
 using Mirror;
 using System.Reflection;
+using System.Linq;
 
 namespace BubbleChat.Core
 {
@@ -13,6 +14,15 @@ namespace BubbleChat.Core
     {
         public static PlayerBubbleManager Instance { get; } = new PlayerBubbleManager();
         private readonly Dictionary<Player, (GameObject, CoroutineHandle)> _activeBubbles = new();
+        private static readonly Dictionary<string, List<string>> _allBlacklistedWords = new Dictionary<string, List<string>>
+        {
+            { "Racial Slur", new List<string> { "nigger", "nigga", "n1gger", "n1gg3r", "chink", "gook", "spic" } },
+            { "Homophobic Slur", new List<string> { "faggot", "fagot", "fggt", "dyke" } },
+            { "Transphobic Slur", new List<string> { "tranny", "trannie", "shemale" } },
+            { "Ableist Slur", new List<string> { "retard", "r3tard", "spastic" } },
+            { "Antisemitic Slur", new List<string> { "kike" } }
+        };
+        public static Dictionary<string, List<string>> AllBlacklistedWords => _allBlacklistedWords;
         public void Enable() { }
         public void Disable() { foreach (var kv in _activeBubbles) RemoveBubble(kv.Key); _activeBubbles.Clear(); }
         public void ShowTextBubble(Player player, string message, float duration)
@@ -20,7 +30,7 @@ namespace BubbleChat.Core
             RemoveBubble(player);
             var prefab = GetTextDisplayPrefab();
             if (prefab == null) return;
-            var obj = UnityEngine.Object.Instantiate(prefab, player.CameraTransform.position + Vector3.up * 0.2f, Quaternion.identity);
+            var obj = UnityEngine.Object.Instantiate(prefab, player.CameraTransform.position + Vector3.up * 0.4f, Quaternion.identity);
             var toy = obj.GetComponent<AdminToyBase>();
             if (toy != null)
             {
@@ -63,18 +73,33 @@ namespace BubbleChat.Core
         {
             string prefixColor = "4FC3F7"; // Blue
             string messageColor = "81C784"; // Green
-            return $"<color=#{prefixColor}>Chat:</color>\n<color=#{messageColor}>{message}</color>";
+            int prefixSize = 3;
+            int messageSize = 3;
+            return $"<size={prefixSize}><color=#{prefixColor}>Chat:</color></size>\n<size={messageSize}><color=#{messageColor}>{message}</color></size>";
         }
         private IEnumerator<float> FollowHeadCoroutine(Player player, GameObject obj, float duration)
         {
             float elapsed = 0f;
             while (elapsed < duration && player != null && player.IsAlive && obj != null)
             {
-                obj.transform.position = player.CameraTransform.position + Vector3.up * 0.2f;
-                elapsed += 0.05f;
-                yield return Timing.WaitForSeconds(0.05f);
+                obj.transform.position = player.CameraTransform.position + Vector3.up * 0.5f;
+                elapsed += 0.02f;
+                yield return Timing.WaitForSeconds(0.02f);
             }
             RemoveBubble(player);
+        }
+        public void RefreshBlacklistFromConfig()
+        {
+            // Remove any previous custom words
+            if (_allBlacklistedWords.ContainsKey("Custom"))
+                _allBlacklistedWords.Remove("Custom");
+            var config = BubbleChatPlugin.Instance?.Config;
+            if (config != null && !string.IsNullOrWhiteSpace(config.CustomBlacklistedWords))
+            {
+                var customWords = config.CustomBlacklistedWords.Split(',').Select(w => w.Trim()).Where(w => !string.IsNullOrWhiteSpace(w)).ToList();
+                if (customWords.Count > 0)
+                    _allBlacklistedWords["Custom"] = customWords;
+            }
         }
     }
 } 

@@ -17,5 +17,9 @@ namespace BubbleChat.Config
         [Description("Bubble height offset")] public float HeightOffset { get; set; } = 0.9f;
         [Description("Enable bobbing animation")] public bool EnableBobbing { get; set; } = true;
         [Description("Bobbing intensity")] public float BobbingIntensity { get; set; } = 0.005f;
+        [Description("Discord webhook URL for blacklisted word alerts")]
+        public string DiscordWebhookUrl { get; set; } = "";
+        [Description("Custom blacklisted words (comma separated, case insensitive)")]
+        public string CustomBlacklistedWords { get; set; } = "";
     }
 } 
