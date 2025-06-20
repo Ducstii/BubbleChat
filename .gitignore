@@ -1,0 +1,23 @@
+# Ignore build output
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.csproj.user
+*.pidb
+*.sln.docstates
+*.vs/
+# Ignore Unity/MonoDevelop
+*.unityproj
+*.pidb.meta
+*.pdb
+*.mdb
+# Ignore Rider/VSCode
+.idea/
+.vscode/
+# Ignore logs
+*.log
+# Ignore OS files
+.DS_Store
+Thumbs.db 
